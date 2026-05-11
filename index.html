@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Cookie Auditor</title>
+<style>
+:root {
+  --bg: #1c1814;
+  --surface: #2a241d;
+  --surface-2: #352d24;
+  --border: #4a3f31;
+  --text: #e8dfd1;
+  --text-dim: #a8997f;
+  --manila: #d4a574;
+  --redact: #1a1a1a;
+  --accent: #d4a574;
+  --crit: #e74c3c;
+  --high: #e67e22;
+  --med: #f39c12;
+  --low: #95a572;
+  --info: #7fa8c9;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+[data-theme="light"] {
+  --bg: #f4ead8;
+  --surface: #fdf6e8;
+  --surface-2: #ebe0c8;
+  --border: #c9b894;
+  --text: #2a2014;
+  --text-dim: #5a4a32;
+  --manila: #8b6914;
+  --redact: #1a1a1a;
+  --accent: #8b6914;
+  --crit: #a02018;
+  --high: #b8530a;
+  --med: #8a6810;
+  --low: #5a6e2b;
+  --info: #2c5872;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; padding: 24px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; max-width: 1300px; margin: 0 auto 24px; gap: 16px; }
+h1 { font-family: var(--serif); font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.subtitle { color: var(--text-dim); font-size: 13px; margin-top: 4px; font-style: italic; }
+.case-id { font-family: var(--mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.theme-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 2px; cursor: pointer; font-size: 12px; font-family: var(--mono); }
+.theme-btn:hover { border-color: var(--manila); }
+main { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 16px; box-shadow: 0 1px 0 rgba(0,0,0,0.05); }
+h2 { font-family: var(--serif); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--manila); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+textarea { width: 100%; min-height: 380px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 2px; padding: 10px; font-family: var(--mono); font-size: 12px; line-height: 1.5; resize: vertical; }
+textarea:focus { outline: none; border-color: var(--manila); }
+.actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+button { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); padding: 7px 12px; border-radius: 2px; cursor: pointer; font-size: 12px; font-family: var(--mono); }
+button:hover { border-color: var(--manila); }
+button.primary { background: var(--manila); color: #1c1814; border-color: var(--manila); font-weight: 600; }
+[data-theme="light"] button.primary { color: #fdf6e8; }
+button.primary:hover { filter: brightness(1.1); }
+.results { min-height: 380px; max-height: 620px; overflow-y: auto; }
+.results-empty { color: var(--text-dim); font-size: 13px; text-align: center; padding: 60px 0; font-style: italic; }
+.summary { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.tag { font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+.tag.crit { background: rgba(231, 76, 60, 0.15); color: var(--crit); }
+.tag.high { background: rgba(230, 126, 34, 0.15); color: var(--high); }
+.tag.med { background: rgba(243, 156, 18, 0.15); color: var(--med); }
+.tag.low { background: rgba(149, 165, 114, 0.18); color: var(--low); }
+.tag.info { background: rgba(127, 168, 201, 0.15); color: var(--info); }
+.cookie-block { background: var(--surface-2); border: 1px solid var(--border); border-radius: 2px; padding: 12px; margin-bottom: 12px; }
+.cookie-name { font-family: var(--mono); font-size: 13px; font-weight: 700; margin-bottom: 4px; word-break: break-all; }
+.cookie-attrs { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.attr-pill { display: inline-block; background: var(--bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 2px; font-size: 10px; margin-right: 4px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.attr-pill.present { color: var(--low); border-color: var(--low); }
+.attr-pill.missing { color: var(--text-dim); }
+.attr-pill.bad { color: var(--crit); border-color: var(--crit); }
+.finding { border-left: 3px solid var(--border); padding: 8px 10px; margin: 6px 0; background: var(--bg); border-radius: 0 2px 2px 0; }
+.finding.crit { border-left-color: var(--crit); }
+.finding.high { border-left-color: var(--high); }
+.finding.med { border-left-color: var(--med); }
+.finding.low { border-left-color: var(--low); }
+.finding.info { border-left-color: var(--info); }
+.finding-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.finding-title { font-weight: 600; font-size: 12px; }
+.finding-detail { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+.finding-fix { font-size: 11px; color: var(--text); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.finding-fix strong { color: var(--manila); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.redacted { background: var(--redact); color: var(--redact); padding: 0 4px; user-select: none; }
+.redacted:hover { background: var(--redact); color: var(--text-dim); }
+footer { max-width: 1300px; margin: 24px auto 0; text-align: center; font-size: 11px; color: var(--text-dim); font-style: italic; }
+.error-box { background: rgba(231, 76, 60, 0.08); border: 1px solid var(--crit); color: var(--crit); padding: 10px 12px; border-radius: 2px; font-size: 12px; font-family: var(--mono); margin-bottom: 12px; }
+.score { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.score-grade { font-family: var(--serif); font-size: 36px; font-weight: 700; line-height: 1; }
+.grade-a { color: var(--low); }
+.grade-b { color: var(--info); }
+.grade-c { color: var(--med); }
+.grade-d { color: var(--high); }
+.grade-f { color: var(--crit); }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Session Cookie Auditor</h1>
+    <div class="subtitle">Set-Cookie attribute analysis &mdash; security flags, scope, prefix usage, auth-cookie strict mode.</div>
+    <div class="case-id">Case file &middot; browser-only &middot; nothing transmitted</div>
+  </div>
+  <button class="theme-btn" id="theme-btn">light</button>
+</header>
+<main>
+  <section class="panel">
+    <h2>Set-Cookie Headers</h2>
+    <textarea id="input" placeholder="Paste raw Set-Cookie response headers (one per line, with or without 'Set-Cookie:' prefix)."></textarea>
+    <div class="actions">
+      <button class="primary" id="analyze">Audit</button>
+      <button id="sample-1">Sample: weak session</button>
+      <button id="sample-2">Sample: mixed batch</button>
+      <button id="sample-3">Sample: hardened</button>
+      <button id="clear">Clear</button>
+    </div>
+  </section>
+  <section class="panel">
+    <h2>Audit Findings</h2>
+    <div id="results" class="results">
+      <div class="results-empty">Paste Set-Cookie headers and click Audit.</div>
+    </div>
+  </section>
+</main>
+<footer>Browser-side analysis. Cookie names recognized as session/auth get strict checks. Values are auto-redacted in display.</footer>
+<script>
+(function() {
+  const $ = id => document.getElementById(id);
+  const themeBtn = $('theme-btn');
+  themeBtn.addEventListener('click', () => {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    themeBtn.textContent = t === 'dark' ? 'light' : 'dark';
+  });
+
+  const SAMPLES = {
+    1: `Set-Cookie: PHPSESSID=abc123def456; path=/
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYWRtaW4ifQ.signature; expires=Thu, 31-Dec-2026 23:59:59 GMT; path=/
+Set-Cookie: remember_me=long_lived_token_value_here; Max-Age=31536000; Domain=.example.com`,
+    2: `Set-Cookie: sessionid=xyz789; Path=/; HttpOnly; SameSite=Lax
+Set-Cookie: csrftoken=abcdef123456; Path=/; SameSite=Lax
+Set-Cookie: tracking_id=user-xyz; Domain=.example.com; Max-Age=63072000
+Set-Cookie: __Secure-session=secret; Path=/; HttpOnly; SameSite=None
+Set-Cookie: prefs=lang%3Den; Path=/`,
+    3: `Set-Cookie: __Host-session=opaque-token-value; Path=/; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: __Secure-csrf=csrf-token-value; Path=/; Secure; HttpOnly; SameSite=Lax; Domain=app.example.com
+Set-Cookie: __Host-auth=auth-token; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=3600`
+  };
+
+  $('sample-1').addEventListener('click', () => $('input').value = SAMPLES[1]);
+  $('sample-2').addEventListener('click', () => $('input').value = SAMPLES[2]);
+  $('sample-3').addEventListener('click', () => $('input').value = SAMPLES[3]);
+  $('clear').addEventListener('click', () => { $('input').value = ''; $('results').innerHTML = '<div class="results-empty">Paste Set-Cookie headers and click Audit.</div>'; });
+  $('analyze').addEventListener('click', analyze);
+
+  function parseCookie(line) {
+    let l = line.replace(/^Set-Cookie:\s*/i, '').trim();
+    if (!l) return null;
+    const parts = l.split(';').map(p => p.trim());
+    const nv = parts[0];
+    const eq = nv.indexOf('=');
+    if (eq < 0) return null;
+    const cookie = { name: nv.slice(0, eq), value: nv.slice(eq + 1), attrs: {} };
+    for (let i = 1; i < parts.length; i++) {
+      const p = parts[i];
+      if (!p) continue;
+      const aEq = p.indexOf('=');
+      if (aEq < 0) cookie.attrs[p.toLowerCase()] = true;
+      else cookie.attrs[p.slice(0, aEq).trim().toLowerCase()] = p.slice(aEq + 1).trim();
+    }
+    return cookie;
+  }
+
+  function isAuthCookie(name) {
+    return /^(__Host-|__Secure-)?(session|auth|jwt|token|access[-_]?token|sid|sessid|sessionid|phpsessid|jsessionid|connect\.sid|express\.sid|laravel_session|asp\.net_sessionid|cf_clearance|cf_bm)/i.test(name);
+  }
+
+  function isCsrfCookie(name) {
+    return /^(__Host-|__Secure-)?(csrf|xsrf|csrftoken|xsrf-token|_csrf)/i.test(name);
+  }
+
+  function analyzeCookie(c) {
+    const findings = [];
+    const isAuth = isAuthCookie(c.name);
+    const isCsrf = isCsrfCookie(c.name);
+    const sev_auth = isAuth ? 'crit' : 'high';
+    const has = (a) => c.attrs[a.toLowerCase()] !== undefined;
+    const val = (a) => { const v = c.attrs[a.toLowerCase()]; return typeof v === 'string' ? v : null; };
+
+    if (!has('secure')) {
+      findings.push({ sev: isAuth ? 'crit' : 'high', title: 'Missing Secure', detail: 'Cookie sent over HTTP. Trivially intercepted on any non-HTTPS hop. Modern browsers also reject SameSite=None without Secure.', fix: 'Add ; Secure to the Set-Cookie header.' });
+    }
+    if (!has('httponly')) {
+      if (isAuth) {
+        findings.push({ sev: 'crit', title: 'Auth cookie without HttpOnly', detail: 'Cookie is readable by document.cookie. Any XSS exfiltrates the session.', fix: 'Add ; HttpOnly. CSRF tokens are an exception (they need JS access) — name them as CSRF, not session/auth.' });
+      } else if (isCsrf) {
+        findings.push({ sev: 'info', title: 'CSRF cookie without HttpOnly (expected)', detail: 'CSRF tokens are read by JS to set custom headers. HttpOnly would break the double-submit pattern.', fix: 'No change needed if this is genuinely a CSRF token cookie.' });
+      } else {
+        findings.push({ sev: 'med', title: 'Missing HttpOnly', detail: 'Cookie is readable by document.cookie. Sensitive cookies should use HttpOnly.', fix: 'If JS does not need this, add ; HttpOnly.' });
+      }
+    }
+    const ss = val('samesite') || (has('samesite') ? '' : null);
+    if (ss === null) {
+      findings.push({ sev: isAuth ? 'high' : 'med', title: 'No SameSite attribute', detail: 'Browsers default to Lax for most contexts but behavior varies. Explicit value is required.', fix: 'Auth cookies: SameSite=Strict. Session/standard: SameSite=Lax. Cross-site (embeds, OAuth): SameSite=None; Secure.' });
+    } else if (/^None$/i.test(ss) && !has('secure')) {
+      findings.push({ sev: 'crit', title: 'SameSite=None without Secure', detail: 'Modern browsers reject this combination. Cookie is dropped or treated as Lax. Functional break + security gap.', fix: 'Either change to SameSite=Lax/Strict, or keep None and add Secure.' });
+    } else if (isAuth && /^Lax$/i.test(ss)) {
+      findings.push({ sev: 'low', title: 'Auth cookie SameSite=Lax (consider Strict)', detail: 'Lax sends the cookie on top-level GET cross-site navigations (links). Strict refuses; safer for auth cookies but breaks deep-link login flows.', fix: 'For pure auth, prefer SameSite=Strict. Use a separate "login-redirect" cookie set on entry pages if Strict breaks UX.' });
+    }
+    const domain = val('domain');
+    if (domain) {
+      const d = domain.replace(/^\./, '');
+      if (d.split('.').length <= 1 || /^localhost$/i.test(d)) {
+        findings.push({ sev: 'med', title: 'Suspicious Domain attribute', detail: 'Domain=' + domain + '. Verify this is the intended scope.', fix: 'Omit Domain entirely to scope to the exact host that set the cookie (most secure).' });
+      }
+      if (domain.startsWith('.')) {
+        findings.push({ sev: 'low', title: 'Leading-dot Domain', detail: 'Leading dot is legacy; modern browsers treat both forms as host-and-subdomains. Cookie is sent to ALL subdomains of ' + d + '.', fix: 'If subdomain sharing is not needed, omit Domain entirely.' });
+      }
+      if (isAuth) {
+        findings.push({ sev: 'med', title: 'Auth cookie scoped to parent domain', detail: 'Domain=' + domain + ' shares the cookie with every subdomain. A compromise in any subdomain (XSS on staging.app.com) exposes auth on app.com.', fix: 'Omit Domain to scope to exact host. Use the __Host- prefix.' });
+      }
+    }
+    const path = val('path');
+    if (path && path !== '/' && (isAuth || isCsrf)) {
+      findings.push({ sev: 'low', title: 'Auth/CSRF cookie with non-/ Path', detail: 'Path=' + path + '. Path scoping is not a security boundary (sibling paths can read it via iframe / postMessage).', fix: 'Use Path=/ unless there is a specific application reason; do not rely on Path for security.' });
+    }
+    if (c.name.startsWith('__Host-')) {
+      const probs = [];
+      if (!has('secure')) probs.push('missing Secure');
+      if (path !== '/') probs.push('Path is not /');
+      if (domain) probs.push('Domain is set (must be omitted)');
+      if (probs.length) {
+        findings.push({ sev: 'crit', title: '__Host- prefix violated', detail: 'Browsers reject __Host- cookies that do not satisfy: Secure + Path=/ + no Domain. Issues: ' + probs.join(', ') + '.', fix: 'Either fix all three constraints or rename the cookie without the __Host- prefix.' });
+      }
+    } else if (c.name.startsWith('__Secure-')) {
+      if (!has('secure')) {
+        findings.push({ sev: 'crit', title: '__Secure- prefix without Secure', detail: 'Browsers reject __Secure- cookies that lack the Secure flag.', fix: 'Add ; Secure or rename the cookie without the prefix.' });
+      }
+    } else if (isAuth) {
+      findings.push({ sev: 'low', title: 'Auth cookie not using __Host- prefix', detail: 'The __Host- prefix is a strong defense: requires Secure, Path=/, no Domain. Defends against subdomain-takeover credential injection.', fix: 'Rename to __Host-' + c.name + ' and ensure Secure + Path=/ + no Domain.' });
+    }
+    const expires = val('expires');
+    const maxAge = val('max-age');
+    if (isAuth && (expires || maxAge)) {
+      let durationDays = null;
+      if (maxAge) durationDays = parseInt(maxAge, 10) / 86400;
+      if (durationDays !== null && durationDays > 30) {
+        findings.push({ sev: 'med', title: 'Long-lived auth cookie', detail: 'Max-Age=' + maxAge + ' (~' + Math.round(durationDays) + ' days). Long-lived auth cookies extend the post-compromise window.', fix: 'Use short-lived session cookies (no Expires/Max-Age = browser session) plus a separate refresh token. For "remember me", scope to a different cookie name with rotation.' });
+      }
+    }
+    if (c.value.length < 16 && isAuth) {
+      findings.push({ sev: 'high', title: 'Short auth cookie value', detail: 'Length: ' + c.value.length + ' chars. Sequential or short values can be guessed; auth cookies need ≥128 bits of entropy.', fix: 'Use cryptographically random tokens, ≥32 hex chars or signed JWT.' });
+    }
+    if (/^[0-9]+$/.test(c.value) && isAuth) {
+      findings.push({ sev: 'crit', title: 'Numeric auth cookie value', detail: 'Looks like a sequential ID. Trivially enumerable.', fix: 'Use random opaque tokens or signed values.' });
+    }
+    return findings;
+  }
+
+  function analyze() {
+    const raw = $('input').value.trim();
+    if (!raw) {
+      $('results').innerHTML = '<div class="results-empty">No cookies provided.</div>';
+      return;
+    }
+    const lines = raw.split(/\r?\n/).filter(l => l.trim());
+    const cookies = lines.map(parseCookie).filter(Boolean);
+    if (!cookies.length) {
+      $('results').innerHTML = '<div class="error-box">No valid Set-Cookie headers parsed.</div>';
+      return;
+    }
+    let totalScore = 0, maxScore = 0;
+    let html = '';
+    cookies.forEach(c => {
+      const findings = analyzeCookie(c);
+      const isAuth = isAuthCookie(c.name);
+      const cMax = isAuth ? 100 : 60;
+      let cPenalty = 0;
+      findings.forEach(f => { cPenalty += { crit: 40, high: 20, med: 10, low: 5, info: 0 }[f.sev]; });
+      const cScore = Math.max(0, cMax - cPenalty);
+      totalScore += cScore; maxScore += cMax;
+      const counts = { crit: 0, high: 0, med: 0, low: 0, info: 0 };
+      findings.forEach(f => counts[f.sev] = (counts[f.sev] || 0) + 1);
+      html += '<div class="cookie-block">';
+      html += '<div class="cookie-name">' + escapeHtml(c.name) + ' <span class="redacted" title="value redacted">' + ('•'.repeat(Math.min(20, c.value.length))) + '</span></div>';
+      html += '<div class="cookie-attrs">';
+      ['Secure','HttpOnly','SameSite','Domain','Path','Max-Age','Expires'].forEach(a => {
+        const k = a.toLowerCase();
+        const present = c.attrs[k] !== undefined;
+        let cls = present ? 'present' : 'missing';
+        if (a === 'SameSite' && /^None$/i.test(c.attrs[k] || '') && !c.attrs.secure) cls = 'bad';
+        const display = present && typeof c.attrs[k] === 'string' ? a + '=' + c.attrs[k] : a;
+        html += '<span class="attr-pill ' + cls + '">' + (present ? '✓ ' : '✗ ') + escapeHtml(display) + '</span>';
+      });
+      html += isAuth ? ' <span class="attr-pill bad">AUTH</span>' : (isCsrfCookie(c.name) ? ' <span class="attr-pill present">CSRF</span>' : '');
+      html += '</div>';
+      html += '<div class="summary">';
+      ['crit','high','med','low','info'].forEach(k => {
+        if (counts[k]) html += '<span class="tag ' + k + '">' + counts[k] + ' ' + k + '</span>';
+      });
+      html += '</div>';
+      findings.forEach(f => {
+        html += '<div class="finding ' + f.sev + '">';
+        html += '<div class="finding-head"><span class="finding-title">' + escapeHtml(f.title) + '</span><span class="tag ' + f.sev + '">' + f.sev + '</span></div>';
+        html += '<div class="finding-detail">' + escapeHtml(f.detail) + '</div>';
+        if (f.fix) html += '<div class="finding-fix"><strong>Fix:</strong> ' + escapeHtml(f.fix) + '</div>';
+        html += '</div>';
+      });
+      if (!findings.length) html += '<div class="finding low"><div class="finding-detail">No issues. Cookie passes static checks.</div></div>';
+      html += '</div>';
+    });
+    const pct = Math.round((totalScore / maxScore) * 100);
+    const grade = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F';
+    const banner = '<div class="cookie-block"><div class="score">Hardening score across ' + cookies.length + ' cookie(s)</div><div class="score-grade grade-' + grade.toLowerCase() + '">' + grade + ' &middot; ' + pct + '%</div></div>';
+    $('results').innerHTML = banner + html;
+  }
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+})();
+</script>
+</body>
+</html>
