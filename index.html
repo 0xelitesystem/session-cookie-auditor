@@ -200,7 +200,7 @@ Set-Cookie: __Host-auth=auth-token; Path=/; Secure; HttpOnly; SameSite=Strict; M
     }
     if (!has('httponly')) {
       if (isAuth) {
-        findings.push({ sev: 'crit', title: 'Auth cookie without HttpOnly', detail: 'Cookie is readable by document.cookie. Any XSS exfiltrates the session.', fix: 'Add ; HttpOnly. CSRF tokens are an exception (they need JS access) — name them as CSRF, not session/auth.' });
+        findings.push({ sev: 'crit', title: 'Auth cookie without HttpOnly', detail: 'Cookie is readable by document.cookie. Any XSS exfiltrates the session.', fix: 'Add ; HttpOnly. CSRF tokens are an exception (they need JS access), name them as CSRF, not session/auth.' });
       } else if (isCsrf) {
         findings.push({ sev: 'info', title: 'CSRF cookie without HttpOnly (expected)', detail: 'CSRF tokens are read by JS to set custom headers. HttpOnly would break the double-submit pattern.', fix: 'No change needed if this is genuinely a CSRF token cookie.' });
       } else {
