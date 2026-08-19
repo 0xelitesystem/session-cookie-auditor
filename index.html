@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Session Cookie Auditor - browser-based Set-Cookie header auditor</title>
-<meta name="description" content="Browser-based Set-Cookie header auditor. Grades cookies Aâ€&quot;F on hardening attributes (Secure, HttpOnly, SameSite, scoping, prefixes)">
+<meta name="description" content="Browser-based Set-Cookie header auditor. Grades cookies A to F on hardening attributes (Secure, HttpOnly, SameSite, scoping, prefixes)">
 <meta property="og:title" content="Session Cookie Auditor">
-<meta property="og:description" content="Browser-based Set-Cookie header auditor. Grades cookies Aâ€&quot;F on hardening attributes (Secure, HttpOnly, SameSite, scoping, prefixes)">
+<meta property="og:description" content="Browser-based Set-Cookie header auditor. Grades cookies A to F on hardening attributes (Secure, HttpOnly, SameSite, scoping, prefixes)">
 <meta property="og:url" content="https://0xelitesystem.github.io/session-cookie-auditor/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
@@ -263,7 +263,7 @@ Set-Cookie: __Host-auth=auth-token; Path=/; Secure; HttpOnly; SameSite=Strict; M
       }
     }
     if (c.value.length < 16 && isAuth) {
-      findings.push({ sev: 'high', title: 'Short auth cookie value', detail: 'Length: ' + c.value.length + ' chars. Sequential or short values can be guessed; auth cookies need ≥128 bits of entropy.', fix: 'Use cryptographically random tokens, ≥32 hex chars or signed JWT.' });
+      findings.push({ sev: 'high', title: 'Short auth cookie value', detail: 'Length: ' + c.value.length + ' chars. Sequential or short values can be guessed; auth cookies need &ge;128 bits of entropy.', fix: 'Use cryptographically random tokens, &ge;32 hex chars or signed JWT.' });
     }
     if (/^[0-9]+$/.test(c.value) && isAuth) {
       findings.push({ sev: 'crit', title: 'Numeric auth cookie value', detail: 'Looks like a sequential ID. Trivially enumerable.', fix: 'Use random opaque tokens or signed values.' });
@@ -296,7 +296,7 @@ Set-Cookie: __Host-auth=auth-token; Path=/; Secure; HttpOnly; SameSite=Strict; M
       const counts = { crit: 0, high: 0, med: 0, low: 0, info: 0 };
       findings.forEach(f => counts[f.sev] = (counts[f.sev] || 0) + 1);
       html += '<div class="cookie-block">';
-      html += '<div class="cookie-name">' + escapeHtml(c.name) + ' <span class="redacted" title="value redacted">' + ('•'.repeat(Math.min(20, c.value.length))) + '</span></div>';
+      html += '<div class="cookie-name">' + escapeHtml(c.name) + ' <span class="redacted" title="value redacted">' + ('&bull;'.repeat(Math.min(20, c.value.length))) + '</span></div>';
       html += '<div class="cookie-attrs">';
       ['Secure','HttpOnly','SameSite','Domain','Path','Max-Age','Expires'].forEach(a => {
         const k = a.toLowerCase();
@@ -304,7 +304,7 @@ Set-Cookie: __Host-auth=auth-token; Path=/; Secure; HttpOnly; SameSite=Strict; M
         let cls = present ? 'present' : 'missing';
         if (a === 'SameSite' && /^None$/i.test(c.attrs[k] || '') && !c.attrs.secure) cls = 'bad';
         const display = present && typeof c.attrs[k] === 'string' ? a + '=' + c.attrs[k] : a;
-        html += '<span class="attr-pill ' + cls + '">' + (present ? '✓ ' : '✗ ') + escapeHtml(display) + '</span>';
+        html += '<span class="attr-pill ' + cls + '">' + (present ? '&#10003; ' : '&#10007; ') + escapeHtml(display) + '</span>';
       });
       html += isAuth ? ' <span class="attr-pill bad">AUTH</span>' : (isCsrfCookie(c.name) ? ' <span class="attr-pill present">CSRF</span>' : '');
       html += '</div>';
