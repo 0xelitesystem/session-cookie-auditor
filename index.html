@@ -124,8 +124,12 @@ footer { max-width: 1300px; margin: 24px auto 0; text-align: center; font-size: 
   --accent: #2d6b00;
   --bg: #e8ebef;
   --border: #c8cdd5;
-  --crit: #a82d14;
+  --crit: #9b2912;
+  --high: #8d3f08;
   --info: #0f5c60;
+  --low: #4c5c24;
+  --manila: #755911;
+  --med: #70540d;
   --surface: #dee2e8;
   --surface-2: #d3d7df;
   --text: #0a0a0a;
@@ -158,7 +162,7 @@ footer { max-width: 1300px; margin: 24px auto 0; text-align: center; font-size: 
   </section>
   <section class="panel">
     <h2>Audit Findings</h2>
-    <div id="results" class="results">
+    <div id="results" class="results" tabindex="0" role="region" aria-label="Audit findings">
       <div class="results-empty">Paste Set-Cookie headers and click Audit.</div>
     </div>
   </section>
