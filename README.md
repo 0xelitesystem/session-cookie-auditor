@@ -6,6 +6,16 @@ Browser-based auditor for `Set-Cookie` headers. Paste one or more headers, get a
 
 Single HTML file. No build step, no dependencies, no network calls. Forensic-style output: monospaced finding blocks with redacted spans for cookie values.
 
+## Use
+
+1. Paste one or more raw `Set-Cookie` headers into the box, one per line, with or without the `Set-Cookie:` prefix. Or click one of the sample buttons.
+2. Click Audit.
+3. Read the grade and the findings for each cookie, then fix the missing or weak attributes on your server.
+
+## Why this exists
+
+Cookie attributes like `Secure`, `HttpOnly` and `SameSite` are easy to miss and nothing complains when they are absent. This auditor grades the header text you paste, without sending it anywhere. It is one HTML file with no tracking and no network calls. MIT licensed.
+
 ## What it checks
 
 For every parsed `Set-Cookie` header:
@@ -46,6 +56,21 @@ Not a runtime tester. It does not make HTTP requests, follow redirects, or evalu
 ## Privacy
 
 Cookie values are masked in the output (only attribute structure is shown). Nothing leaves the browser. No analytics, no storage.
+
+One exception: if you click the theme toggle, your light or dark choice is saved in your browser's localStorage under the key `theme`. Nothing you type is stored.
+
+## Run locally
+
+```bash
+git clone https://github.com/0xelitesystem/session-cookie-auditor
+cd session-cookie-auditor
+```
+
+Open `index.html` in any browser. Or serve the folder with `python -m http.server 8000` and visit http://localhost:8000/.
+
+## Build
+
+No build step. The whole tool is one `index.html` file with its CSS and JavaScript inline.
 
 ## Samples
 
