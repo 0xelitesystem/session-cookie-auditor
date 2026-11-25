@@ -87,7 +87,7 @@ Browser-based audit tools:
 - [redos-evil-input-finder](https://github.com/0xelitesystem/redos-evil-input-finder)
 
 Reference collections:
-- [incident-response-runbooks](https://github.com/0xelitesystem/incident-response-runbooks)
+- [incident-runbook-skeletons](https://github.com/0xelitesystem/incident-runbook-skeletons)
 - [ai-llm-security-audit](https://github.com/0xelitesystem/ai-llm-security-audit)
 - [api-security-audit-checklist](https://github.com/0xelitesystem/api-security-audit-checklist)
 - [secrets-leak-response-runbook](https://github.com/0xelitesystem/secrets-leak-response-runbook)
